@@ -3,6 +3,7 @@ package com.phx.userauthenticationservice.controllers;
 import com.phx.userauthenticationservice.dtos.LoginRequestDto;
 import com.phx.userauthenticationservice.dtos.SignupRequestDto;
 import com.phx.userauthenticationservice.dtos.UserDto;
+import com.phx.userauthenticationservice.exceptions.InvalidPasswordException;
 import com.phx.userauthenticationservice.exceptions.UserAlreadyExistException;
 import com.phx.userauthenticationservice.models.User;
 import com.phx.userauthenticationservice.repos.UserRepo;
@@ -41,8 +42,15 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<UserDto> login(@RequestBody LoginRequestDto loginRequestDto) {
-        User user = authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
-        return new ResponseEntity<>(from(user), HttpStatus.OK);
+        try {
+            User user = authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
+            if(user == null){
+                return new ResponseEntity<>(null,HttpStatus.UNAUTHORIZED);
+            }
+            return new ResponseEntity<>(from(user), HttpStatus.OK);
+        }catch (InvalidPasswordException exception){
+            throw new RuntimeException(exception.getMessage());
+        }
     }
 
     @PostMapping("/logout")

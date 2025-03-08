@@ -1,5 +1,6 @@
 package com.phx.userauthenticationservice.services;
 
+import com.phx.userauthenticationservice.exceptions.InvalidPasswordException;
 import com.phx.userauthenticationservice.exceptions.UserAlreadyExistException;
 import com.phx.userauthenticationservice.models.State;
 import com.phx.userauthenticationservice.models.User;
@@ -36,7 +37,16 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public User login(String email, String password) {
+    public User login(String email, String password) throws InvalidPasswordException {
+        Optional<User> optionalUser = Optional.ofNullable(userRepo.findUserByEmail(email));
+        if(optionalUser.isPresent()){
+            User user = optionalUser.get();
+            if(!bCryptPasswordEncoder.matches(password, user.getPassword())){
+                throw  new InvalidPasswordException("Password is invalid");
+            }
+            return user;
+        }
+
         return null;
     }
 
