@@ -6,6 +6,7 @@ import com.phx.userauthenticationservice.models.State;
 import com.phx.userauthenticationservice.models.User;
 import com.phx.userauthenticationservice.repos.UserRepo;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.MacAlgorithm;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -14,7 +15,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -51,17 +56,30 @@ public class AuthService implements IAuthService {
                 throw  new InvalidPasswordException("Password is invalid");
             }
             // Generate plain token
-            String message = "{\n" +
-                "   \"email\": \"anurag@scaler.com\",\n" +
-                "   \"roles\": [\n" +
-                "      \"instructor\",\n" +
-                "      \"buddy\"\n" +
-                "   ],\n" +
-                "   \"expirationDate\": \"25thSept2024\"\n" +
-                "}";
+//            String message = "{\n" +
+//                "   \"email\": \"anurag@scaler.com\",\n" +
+//                "   \"roles\": [\n" +
+//                "      \"instructor\",\n" +
+//                "      \"buddy\"\n" +
+//                "   ],\n" +
+//                "   \"expirationDate\": \"25thSept2024\"\n" +
+//                "}";
+//            byte[] contents = message.getBytes(StandardCharsets.UTF_8);
 
-            byte[] contents = message.getBytes(StandardCharsets.UTF_8);
-            String token = Jwts.builder().content(contents).compact();
+            Map<String,Object> claims =new HashMap<>();
+            claims.put("user_id__",user.getId());
+            claims.put("user_email",user.getEmail());
+            claims.put("roles",user.getRoles());
+            long timeInMillis = System.currentTimeMillis();
+            claims.put("iat",timeInMillis);
+            claims.put("exp",timeInMillis+86400000);
+            claims.put("iss","salman");
+            // Creating token with signature using HS256 algorithms
+
+            MacAlgorithm algorithm = Jwts.SIG.HS256; // algorithm name
+            SecretKey secretKey = algorithm.key().build(); // Generating secret key at runtime
+            //String token = Jwts.builder().content(contents).signWith(secretKey).compact(); // Generating token with payload and secret
+            String token = Jwts.builder().claims(claims).signWith(secretKey).compact();
 
             MultiValueMap<String, String> multiValueMap = new LinkedMultiValueMap<>();
             multiValueMap.add(HttpHeaders.SET_COOKIE, token);
