@@ -8,9 +8,11 @@ import com.phx.userauthenticationservice.exceptions.UserAlreadyExistException;
 import com.phx.userauthenticationservice.models.User;
 import com.phx.userauthenticationservice.repos.UserRepo;
 import com.phx.userauthenticationservice.services.IAuthService;
+import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,11 +45,11 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<UserDto> login(@RequestBody LoginRequestDto loginRequestDto) {
         try {
-            User user = authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
-            if(user == null){
+            Pair<User, MultiValueMap<String,String>> userWithHeader = authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
+            if(userWithHeader.a == null){
                 return new ResponseEntity<>(null,HttpStatus.UNAUTHORIZED);
             }
-            return new ResponseEntity<>(from(user), HttpStatus.OK);
+            return new ResponseEntity<>(from(userWithHeader.a),userWithHeader.b, HttpStatus.OK);
         }catch (InvalidPasswordException exception){
             throw new RuntimeException(exception.getMessage());
         }

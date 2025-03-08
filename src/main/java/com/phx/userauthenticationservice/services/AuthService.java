@@ -5,10 +5,16 @@ import com.phx.userauthenticationservice.exceptions.UserAlreadyExistException;
 import com.phx.userauthenticationservice.models.State;
 import com.phx.userauthenticationservice.models.User;
 import com.phx.userauthenticationservice.repos.UserRepo;
+import io.jsonwebtoken.Jwts;
+import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 @Service
@@ -37,14 +43,32 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public User login(String email, String password) throws InvalidPasswordException {
+    public Pair<User,MultiValueMap<String,String>> login(String email, String password) throws InvalidPasswordException {
         Optional<User> optionalUser = Optional.ofNullable(userRepo.findUserByEmail(email));
         if(optionalUser.isPresent()){
             User user = optionalUser.get();
             if(!bCryptPasswordEncoder.matches(password, user.getPassword())){
                 throw  new InvalidPasswordException("Password is invalid");
             }
-            return user;
+            // Generate plain token
+            String message = "{\n" +
+                "   \"email\": \"anurag@scaler.com\",\n" +
+                "   \"roles\": [\n" +
+                "      \"instructor\",\n" +
+                "      \"buddy\"\n" +
+                "   ],\n" +
+                "   \"expirationDate\": \"25thSept2024\"\n" +
+                "}";
+
+            byte[] contents = message.getBytes(StandardCharsets.UTF_8);
+            String token = Jwts.builder().content(contents).compact();
+
+            MultiValueMap<String, String> multiValueMap = new LinkedMultiValueMap<>();
+            multiValueMap.add(HttpHeaders.SET_COOKIE, token);
+
+            Pair<User,MultiValueMap<String,String>> pair = new Pair<>(user,multiValueMap);
+
+            return pair;
         }
 
         return null;
