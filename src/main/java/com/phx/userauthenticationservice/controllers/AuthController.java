@@ -3,6 +3,7 @@ package com.phx.userauthenticationservice.controllers;
 import com.phx.userauthenticationservice.dtos.LoginRequestDto;
 import com.phx.userauthenticationservice.dtos.SignupRequestDto;
 import com.phx.userauthenticationservice.dtos.UserDto;
+import com.phx.userauthenticationservice.exceptions.UserAlreadyExistException;
 import com.phx.userauthenticationservice.models.User;
 import com.phx.userauthenticationservice.repos.UserRepo;
 import com.phx.userauthenticationservice.services.IAuthService;
@@ -29,9 +30,13 @@ public class AuthController {
         if(signupRequestDto.getEmail() == null || signupRequestDto.getPassword() == null){
             return new ResponseEntity<>(null,HttpStatus.BAD_REQUEST);
         }
+        try{
+            User user = authService.signup(signupRequestDto.getEmail(), signupRequestDto.getPassword());
+            return new ResponseEntity<>(from(user), HttpStatus.CREATED);
+        }catch (UserAlreadyExistException e){
+            throw new RuntimeException(e.getMessage());
+        }
 
-        User user = authService.signup(signupRequestDto.getEmail(), signupRequestDto.getPassword());
-        return new ResponseEntity<>(from(user), HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
