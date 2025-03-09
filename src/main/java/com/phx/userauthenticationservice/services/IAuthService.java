@@ -13,4 +13,6 @@ public interface IAuthService {
 
     User lgout(String email);
 
+    Boolean validateToken(Long userId,String token);
+
 }

@@ -3,6 +3,7 @@ package com.phx.userauthenticationservice.controllers;
 import com.phx.userauthenticationservice.dtos.LoginRequestDto;
 import com.phx.userauthenticationservice.dtos.SignupRequestDto;
 import com.phx.userauthenticationservice.dtos.UserDto;
+import com.phx.userauthenticationservice.dtos.ValidateTokenDto;
 import com.phx.userauthenticationservice.exceptions.InvalidPasswordException;
 import com.phx.userauthenticationservice.exceptions.UserAlreadyExistException;
 import com.phx.userauthenticationservice.models.User;
@@ -53,6 +54,16 @@ public class AuthController {
         }catch (InvalidPasswordException exception){
             throw new RuntimeException(exception.getMessage());
         }
+    }
+
+    @PostMapping("/validateToken")
+    public Boolean validateToken(@RequestBody ValidateTokenDto validateTokenDto){
+        Boolean response = authService.validateToken(validateTokenDto.getUserId(), validateTokenDto.getToken());
+        if(!response){
+            throw new RuntimeException("Please login again");
+        }
+
+        return response;
     }
 
     @PostMapping("/logout")
